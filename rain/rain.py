@@ -62,7 +62,6 @@ def fetch_rain_data(output_dir="./"):
     )
     value_per_pixel = get_value_per_pixel_from_ocr_results(ocr_results)
     scale = value_per_pixel * (plot.shape[0] - 1)
-    print(scale)
 
     # Get date
     date_min_x = 280
