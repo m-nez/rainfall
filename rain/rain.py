@@ -1,3 +1,4 @@
+import time
 import fire
 import pandas as pd
 import os
@@ -32,17 +33,27 @@ def get_datetime(date_str):
     day, month, year = [int(i) for i in date_str.split("-")]
     return datetime.datetime(year, month, day)
 
-def get_output_filename(output_dir, dt):
-    date_string = dt.strftime('%Y-%m-%d')
-    return os.path.join(output_dir, date_string + ".csv")
+
+def get_output_filename(output_dir, dt, ext=".csv"):
+    date_string = dt.strftime("%Y-%m-%d")
+    return os.path.join(output_dir, date_string + ext)
 
 
-def fetch_rain_data(output_dir="./"):
+def get_raw_image_output_filename(output_dir, raw_images_subdir):
+    return os.path.join(output_dir, raw_images_subdir, "{}.png".format(time.time()))
+
+
+def fetch_rain_data(output_dir="./", raw_images_subdir="raw_images"):
     rain_img_url = "https://www.igf.fuw.edu.pl/m/meteo_station/WEBopad.png"
 
     result = requests.get(rain_img_url)
-    img = PIL.Image.open(io.BytesIO(result.content))
-    img = np.array(img)
+    pimg = PIL.Image.open(io.BytesIO(result.content))
+    pimg.save(
+        get_raw_image_output_filename(
+            output_dir=output_dir, raw_images_subdir=raw_images_subdir
+        )
+    )
+    img = np.array(pimg)
 
     min_x = 51
     max_x = 626
@@ -91,8 +102,11 @@ def fetch_rain_data(output_dir="./"):
     utc_timestamps = plot_datetime.timestamp() + utc_timestamp_offsets
 
     filename = get_output_filename(output_dir=output_dir, dt=plot_datetime)
-    df = pd.DataFrame({"precipitation_rate[mm/h]" : y_vals, "timestamp[UTC]" : utc_timestamps})
+    df = pd.DataFrame(
+        {"precipitation_rate[mm/h]": y_vals, "timestamp[UTC]": utc_timestamps}
+    )
     df.to_csv(filename, index=False)
+    pimg.save(get_output_filename(output_dir=output_dir, dt=plot_datetime, ext=".png"))
 
 
 if __name__ == "__main__":
